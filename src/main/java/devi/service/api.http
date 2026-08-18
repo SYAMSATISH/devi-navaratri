@@ -1,0 +1,49 @@
+GET http://localhost:8080/users
+
+###
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{
+  "name": "",
+  "email": ""
+}
+
+###
+PUT http://localhost:8080/users/999
+Content-Type: application/json
+
+{
+  "name": "Test",
+  "email": "test@gmail.com"
+}
+
+### Get User By ID
+GET http://localhost:8080/users/1
+### Get Non Existing User
+GET http://localhost:8080/users/999
+
+### Update User - Validation Test
+PUT http://localhost:8080/users/1
+Content-Type: application/json
+
+{
+  "name": "",
+  "email": ""
+}
+###
+PUT http://localhost:8080/users/1
+Content-Type: application/json
+
+{
+  "name": "",
+  "email": ""
+}
+###
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{
+  "name": "Kiran",
+  "email": "kiran@gmail.com"
+}

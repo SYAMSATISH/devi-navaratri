@@ -19,3 +19,7 @@ Content-Type: application/json
   "name": "Syam Satish",
   "email": "syam.satish@gmail.com"
 }
+
+###
+
+DELETE http://localhost:8080/users/2
