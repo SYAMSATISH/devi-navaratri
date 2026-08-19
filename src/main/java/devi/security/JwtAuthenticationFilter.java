@@ -29,6 +29,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
+        String path = request.getServletPath();
+
+        // Login and user creation are public APIs
+        if (path.equals("/users/login") ||
+                (path.equals("/users") &&
+                        request.getMethod().equalsIgnoreCase("POST"))) {
+
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -40,24 +51,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 if (email != null &&
                         SecurityContextHolder.getContext()
-                                .getAuthentication() == null) {
+                                .getAuthentication() == null &&
+                        jwtService.isTokenValid(token)) {
 
-                    if (jwtService.isTokenValid(token))  {
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    email,
+                                    null,
+                                    Collections.emptyList()
+                            );
 
-                        UsernamePasswordAuthenticationToken authentication =
-                                new UsernamePasswordAuthenticationToken(
-                                        email,
-                                        null,
-                                        Collections.emptyList()
-                                );
-
-                        SecurityContextHolder.getContext()
-                                .setAuthentication(authentication);
-                    }
+                    SecurityContextHolder.getContext()
+                            .setAuthentication(authentication);
                 }
 
             } catch (Exception e) {
-                // Invalid token - request will be rejected by Spring Security
+                // Invalid token - continue without authentication
             }
         }
 
