@@ -28,6 +28,12 @@ public class UserController {
         this.jwtService = jwtService;
     }
 
+    // HOME / HEALTH CHECK
+    @GetMapping("/")
+    public ResponseEntity<String> home() {
+        return ResponseEntity.ok("Devi Navaratri API is running!");
+    }
+
     // CREATE USER
     @PostMapping
     public ResponseEntity<UserResponse> createUser(
