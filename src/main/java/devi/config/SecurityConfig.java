@@ -24,31 +24,35 @@ public class SecurityConfig {
             throws Exception {
 
         http
+                // Disable CSRF because this is a stateless REST API
                 .csrf(csrf -> csrf.disable())
 
+                // JWT authentication - no server-side sessions
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
 
+                // API authorization
                 .authorizeHttpRequests(auth -> auth
 
-                        // Public APIs
+                        // PUBLIC APIs
                         .requestMatchers(
                                 "/users",
                                 "/users/login"
                         ).permitAll()
 
-                        // Protected User APIs
+                        // PROTECTED USER APIs
                         .requestMatchers("/users/**")
                         .authenticated()
 
-                        // Everything else protected
+                        // Everything else requires authentication
                         .anyRequest()
                         .authenticated()
                 )
 
+                // JWT filter runs before Spring's username/password filter
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
