@@ -8,12 +8,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 
 @Component
@@ -45,12 +47,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = authHeader.substring(7);
 
             try {
-
                 String email = jwtService.extractEmail(token);
 
                 if (email != null
-                        && SecurityContextHolder
-                        .getContext()
+                        && SecurityContextHolder.getContext()
                         .getAuthentication() == null) {
 
                     if (jwtService.isTokenValid(token)) {
@@ -61,15 +61,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                         if (user != null) {
 
-                            String role = user.getRole();
+                            Collection<GrantedAuthority> authorities;
 
-                            var authorities =
-                                    role != null
-                                            ? Collections.singletonList(
-                                            new SimpleGrantedAuthority(
-                                                    "ROLE_" + role
-                                            ))
-                                            : Collections.emptyList();
+                            if (user.getRole() != null
+                                    && !user.getRole().isBlank()) {
+
+                                authorities = Collections.singletonList(
+                                        new SimpleGrantedAuthority(
+                                                "ROLE_" + user.getRole()
+                                        )
+                                );
+
+                            } else {
+                                authorities = Collections.emptyList();
+                            }
 
                             UsernamePasswordAuthenticationToken authentication =
                                     new UsernamePasswordAuthenticationToken(
@@ -80,9 +85,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                             SecurityContextHolder
                                     .getContext()
-                                    .setAuthentication(
-                                            authentication
-                                    );
+                                    .setAuthentication(authentication);
                         }
                     }
                 }
