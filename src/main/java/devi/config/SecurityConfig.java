@@ -10,7 +10,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 
 @Configuration
 @EnableMethodSecurity
@@ -18,13 +17,15 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter) {
+
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)
-            throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http) throws Exception {
 
         http
                 .csrf(csrf -> csrf.disable())
@@ -37,21 +38,21 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // PUBLIC APIs
+                        // PUBLIC
                         .requestMatchers(
                                 "/users",
+                                "/users/",
                                 "/users/login"
                         ).permitAll()
 
-                        // ADMIN ONLY
+                        // ADMIN APIs are handled by @PreAuthorize
                         .requestMatchers("/admin/**")
-                        .hasRole("ADMIN")
+                        .authenticated()
 
-                        // MEMBER + ADMIN
+                        // USER APIs
                         .requestMatchers("/users/**")
                         .authenticated()
 
-                        // Everything else
                         .anyRequest()
                         .authenticated()
                 )
