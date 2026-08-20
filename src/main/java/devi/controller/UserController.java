@@ -9,6 +9,7 @@ import devi.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,12 +27,6 @@ public class UserController {
 
         this.userService = userService;
         this.jwtService = jwtService;
-    }
-
-    // HOME / HEALTH CHECK
-    @GetMapping("/")
-    public ResponseEntity<String> home() {
-        return ResponseEntity.ok("Devi Navaratri API is running!");
     }
 
     // CREATE USER
@@ -135,5 +130,18 @@ public class UserController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    // RESET PASSWORD
+    @PutMapping("/{id}/reset-password")
+    public ResponseEntity<String> resetPassword(
+            @PathVariable Long id,
+            @RequestParam String newPassword) {
+
+        userService.resetPassword(id, newPassword);
+
+        return ResponseEntity.ok(
+                "Password reset successful"
+        );
     }
 }
