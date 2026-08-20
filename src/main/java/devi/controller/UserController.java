@@ -9,7 +9,6 @@ import devi.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,7 +38,8 @@ public class UserController {
         UserResponse response = new UserResponse(
                 savedUser.getId(),
                 savedUser.getName(),
-                savedUser.getEmail()
+                savedUser.getEmail(),
+                savedUser.getRole()
         );
 
         return new ResponseEntity<>(
@@ -57,7 +57,8 @@ public class UserController {
                 .map(user -> new UserResponse(
                         user.getId(),
                         user.getName(),
-                        user.getEmail()
+                        user.getEmail(),
+                        user.getRole()
                 ))
                 .toList();
 
@@ -74,7 +75,8 @@ public class UserController {
         UserResponse response = new UserResponse(
                 user.getId(),
                 user.getName(),
-                user.getEmail()
+                user.getEmail(),
+                user.getRole()
         );
 
         return ResponseEntity.ok(response);
@@ -91,7 +93,8 @@ public class UserController {
         UserResponse response = new UserResponse(
                 updatedUser.getId(),
                 updatedUser.getName(),
-                updatedUser.getEmail()
+                updatedUser.getEmail(),
+                updatedUser.getRole()
         );
 
         return ResponseEntity.ok(response);
