@@ -38,8 +38,7 @@ public class UserService {
 
         long memberCount = userRepository.findAll()
                 .stream()
-                .filter(existingUser ->
-                        "MEMBER".equals(existingUser.getRole()))
+                .filter(u -> "MEMBER".equals(u.getRole()))
                 .count();
 
         if (memberCount >= 10) {
@@ -48,24 +47,13 @@ public class UserService {
             );
         }
 
-        user.setPassword(
-                passwordEncoder.encode(user.getPassword())
-        );
-
-        // Normal users are always MEMBERS
         user.setRole("MEMBER");
 
-        return userRepository.save(user);
-    }
-
-    // CREATE ADMIN
-    public User createAdmin(User user) {
-
         user.setPassword(
-                passwordEncoder.encode(user.getPassword())
+                passwordEncoder.encode(
+                        user.getPassword()
+                )
         );
-
-        user.setRole("ADMIN");
 
         return userRepository.save(user);
     }
@@ -76,14 +64,16 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
                         new RuntimeException(
-                                "Invalid email or password"));
+                                "Invalid email or password"
+                        ));
 
         if (!passwordEncoder.matches(
                 password,
                 user.getPassword())) {
 
             throw new RuntimeException(
-                    "Invalid email or password");
+                    "Invalid email or password"
+            );
         }
 
         return user;
@@ -97,7 +87,8 @@ public class UserService {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() ->
                         new RuntimeException(
-                                "User not found"));
+                                "User not found"
+                        ));
 
         existingUser.setName(
                 updatedUser.getName()
@@ -126,7 +117,8 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() ->
                         new RuntimeException(
-                                "User not found"));
+                                "User not found"
+                        ));
 
         userRepository.delete(user);
     }
@@ -139,7 +131,8 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() ->
                         new RuntimeException(
-                                "User not found"));
+                                "User not found"
+                        ));
 
         user.setPassword(
                 passwordEncoder.encode(
@@ -150,33 +143,68 @@ public class UserService {
         userRepository.save(user);
     }
 
-    // CHANGE ROLE
+    // GET ALL MEMBERS
+    public List<User> getMembers() {
+
+        return userRepository.findAll()
+                .stream()
+                .filter(user ->
+                        "MEMBER".equals(user.getRole()))
+                .toList();
+    }
+
+    // GET ALL ADMINS
+    public List<User> getAdmins() {
+
+        return userRepository.findAll()
+                .stream()
+                .filter(user ->
+                        "ADMIN".equals(user.getRole()))
+                .toList();
+    }
+
+    // CREATE ADMIN
+    public User createAdmin(User user) {
+
+        user.setRole("ADMIN");
+
+        user.setPassword(
+                passwordEncoder.encode(
+                        user.getPassword()
+                )
+        );
+
+        return userRepository.save(user);
+    }
+
+    // CHANGE USER ROLE
     public User changeRole(
             Long id,
             String role) {
-
-        User user = userRepository.findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "User not found"));
 
         if (!role.equals("ADMIN")
                 && !role.equals("MEMBER")) {
 
             throw new RuntimeException(
-                    "Role must be ADMIN or MEMBER");
+                    "Role must be ADMIN or MEMBER"
+            );
         }
 
-        // If changing ADMIN to MEMBER,
-        // check the 10-member limit.
+        User user = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "User not found"
+                        ));
+
+        // If changing to MEMBER,
+        // check maximum 10 members
         if ("MEMBER".equals(role)
                 && !"MEMBER".equals(user.getRole())) {
 
             long memberCount = userRepository.findAll()
                     .stream()
-                    .filter(existingUser ->
-                            "MEMBER".equals(
-                                    existingUser.getRole()))
+                    .filter(u ->
+                            "MEMBER".equals(u.getRole()))
                     .count();
 
             if (memberCount >= 10) {
@@ -189,25 +217,5 @@ public class UserService {
         user.setRole(role);
 
         return userRepository.save(user);
-    }
-
-    // GET ONLY MEMBERS
-    public List<User> getMembers() {
-
-        return userRepository.findAll()
-                .stream()
-                .filter(user ->
-                        "MEMBER".equals(user.getRole()))
-                .toList();
-    }
-
-    // GET ONLY ADMINS
-    public List<User> getAdmins() {
-
-        return userRepository.findAll()
-                .stream()
-                .filter(user ->
-                        "ADMIN".equals(user.getRole()))
-                .toList();
     }
 }

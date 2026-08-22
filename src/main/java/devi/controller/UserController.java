@@ -1,3 +1,4 @@
+
 package devi.controller;
 
 import devi.dto.LoginRequest;
@@ -33,17 +34,11 @@ public class UserController {
     public ResponseEntity<UserResponse> createUser(
             @Valid @RequestBody User user) {
 
-        User savedUser = userService.createUser(user);
-
-        UserResponse response = new UserResponse(
-                savedUser.getId(),
-                savedUser.getName(),
-                savedUser.getEmail(),
-                savedUser.getRole()
-        );
+        User savedUser =
+                userService.createUser(user);
 
         return new ResponseEntity<>(
-                response,
+                toResponse(savedUser),
                 HttpStatus.CREATED
         );
     }
@@ -52,15 +47,11 @@ public class UserController {
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAllUsers() {
 
-        List<UserResponse> users = userService.getAllUsers()
-                .stream()
-                .map(user -> new UserResponse(
-                        user.getId(),
-                        user.getName(),
-                        user.getEmail(),
-                        user.getRole()
-                ))
-                .toList();
+        List<UserResponse> users =
+                userService.getAllUsers()
+                        .stream()
+                        .map(this::toResponse)
+                        .toList();
 
         return ResponseEntity.ok(users);
     }
@@ -70,16 +61,12 @@ public class UserController {
     public ResponseEntity<UserResponse> getUserById(
             @PathVariable Long id) {
 
-        User user = userService.getUserById(id);
+        User user =
+                userService.getUserById(id);
 
-        UserResponse response = new UserResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getRole()
+        return ResponseEntity.ok(
+                toResponse(user)
         );
-
-        return ResponseEntity.ok(response);
     }
 
     // UPDATE USER
@@ -88,16 +75,12 @@ public class UserController {
             @PathVariable Long id,
             @Valid @RequestBody User user) {
 
-        User updatedUser = userService.updateUser(id, user);
+        User updatedUser =
+                userService.updateUser(id, user);
 
-        UserResponse response = new UserResponse(
-                updatedUser.getId(),
-                updatedUser.getName(),
-                updatedUser.getEmail(),
-                updatedUser.getRole()
+        return ResponseEntity.ok(
+                toResponse(updatedUser)
         );
-
-        return ResponseEntity.ok(response);
     }
 
     // DELETE USER
@@ -115,22 +98,24 @@ public class UserController {
     public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody LoginRequest request) {
 
-        User user = userService.login(
-                request.getEmail(),
-                request.getPassword()
-        );
+        User user =
+                userService.login(
+                        request.getEmail(),
+                        request.getPassword()
+                );
 
-        String token = jwtService.generateToken(
-                user.getEmail()
-        );
+        String token =
+                jwtService.generateToken(user);
 
-        LoginResponse response = new LoginResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                "Login successful",
-                token
-        );
+        LoginResponse response =
+                new LoginResponse(
+                        user.getId(),
+                        user.getName(),
+                        user.getEmail(),
+                        user.getRole(),
+                        "Login successful",
+                        token
+                );
 
         return ResponseEntity.ok(response);
     }
@@ -141,10 +126,24 @@ public class UserController {
             @PathVariable Long id,
             @RequestParam String newPassword) {
 
-        userService.resetPassword(id, newPassword);
+        userService.resetPassword(
+                id,
+                newPassword
+        );
 
         return ResponseEntity.ok(
                 "Password reset successful"
+        );
+    }
+
+    // CONVERT USER TO RESPONSE
+    private UserResponse toResponse(User user) {
+
+        return new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole()
         );
     }
 }

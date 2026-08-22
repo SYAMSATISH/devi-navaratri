@@ -1,5 +1,6 @@
 package devi.service;
 
+import devi.entity.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,8 @@ public class JwtService {
                     SECRET_KEY.getBytes(StandardCharsets.UTF_8)
             );
 
-    public String generateToken(String email) {
+    // GENERATE TOKEN
+    public String generateToken(User user) {
 
         Date now = new Date();
 
@@ -31,13 +33,15 @@ public class JwtService {
         );
 
         return Jwts.builder()
-                .subject(email)
+                .subject(user.getEmail())
+                .claim("role", user.getRole())
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(key)
                 .compact();
     }
 
+    // EXTRACT EMAIL
     public String extractEmail(String token) {
 
         return Jwts.parser()
@@ -48,6 +52,23 @@ public class JwtService {
                 .getSubject();
     }
 
+    // EXTRACT ROLE
+    public String extractRole(String token) {
+
+        Object role =
+                Jwts.parser()
+                        .verifyWith(key)
+                        .build()
+                        .parseSignedClaims(token)
+                        .getPayload()
+                        .get("role");
+
+        return role != null
+                ? role.toString()
+                : null;
+    }
+
+    // VALIDATE TOKEN
     public boolean isTokenValid(String token) {
 
         try {
