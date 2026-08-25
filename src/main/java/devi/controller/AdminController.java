@@ -59,6 +59,18 @@ public class AdminController {
                 HttpStatus.CREATED
         );
     }
+    // CREATE ADMIN
+@PostMapping("/admins")
+public ResponseEntity<UserResponse> createAdmin(
+        @RequestBody User user) {
+
+    User savedAdmin = userService.createAdmin(user);
+
+    return new ResponseEntity<>(
+            toResponse(savedAdmin),
+            HttpStatus.CREATED
+    );
+}
 
     // UPDATE MEMBER
     @PutMapping("/members/{id}")
