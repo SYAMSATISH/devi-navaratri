@@ -1,8 +1,11 @@
+
 package devi.config;
 
 import devi.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -25,8 +28,7 @@ public class SecurityConfig {
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter) {
 
-        this.jwtAuthenticationFilter =
-                jwtAuthenticationFilter;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
     @Bean
@@ -34,43 +36,45 @@ public class SecurityConfig {
             HttpSecurity http) throws Exception {
 
         http
-                // CORS
-                .cors(cors -> {})
-
-                // Disable CSRF for REST API
                 .csrf(csrf -> csrf.disable())
 
-                // JWT is stateless
+                .cors(cors -> cors.configurationSource(
+                        corsConfigurationSource()
+                ))
+
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
 
-                // Authorization
                 .authorizeHttpRequests(auth -> auth
 
-                        // PUBLIC APIs
+                        // CORS PREFLIGHT
+                        .requestMatchers(
+                                HttpMethod.OPTIONS,
+                                "/**"
+                        ).permitAll()
+
+                        // PUBLIC
                         .requestMatchers(
                                 "/users",
                                 "/users/",
                                 "/users/login"
                         ).permitAll()
 
-                        // ADMIN APIs
+                        // ADMIN
                         .requestMatchers("/admin/**")
                         .authenticated()
 
-                        // USER APIs
+                        // USER
                         .requestMatchers("/users/**")
                         .authenticated()
 
-                        // Everything else
                         .anyRequest()
                         .authenticated()
                 )
 
-                // JWT filter
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
@@ -79,32 +83,29 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // CORS CONFIGURATION
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
-        configuration.setAllowedOrigins(
-                List.of(
-                        "http://localhost:5173"
-                )
-        );
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:5173"
+        ));
 
-        configuration.setAllowedMethods(
-                List.of(
-                        "GET",
-                        "POST",
-                        "PUT",
-                        "DELETE",
-                        "OPTIONS"
-                )
-        );
+        configuration.setAllowedMethods(List.of(
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "OPTIONS"
+        ));
 
-        configuration.setAllowedHeaders(
-                List.of("*")
-        );
+        configuration.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "Accept"
+        ));
 
         configuration.setAllowCredentials(true);
 
@@ -119,10 +120,8 @@ public class SecurityConfig {
         return source;
     }
 
-    // PASSWORD ENCODER
     @Bean
     public PasswordEncoder passwordEncoder() {
-
         return new BCryptPasswordEncoder();
     }
 }

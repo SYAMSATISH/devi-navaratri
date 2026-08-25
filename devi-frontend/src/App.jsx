@@ -22,44 +22,57 @@ function App() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `${API_URL}/users/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            password,
-          }),
-        }
-      );
+      const response = await fetch(`${API_URL}/users/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+        }),
+      });
 
-      const data = await response.json();
+      // Read response as text first.
+      // This prevents "Unexpected end of JSON input"
+      // when backend sends an empty/non-JSON response.
+      const responseText = await response.text();
+
+      let data = {};
+
+      if (responseText.trim()) {
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          throw new Error(
+            `Server returned an invalid response (${response.status})`
+          );
+        }
+      }
 
       if (!response.ok) {
         throw new Error(
           data.message ||
-          data.error ||
-          "Login failed"
+            data.error ||
+            responseText ||
+            `Login failed (${response.status})`
         );
       }
 
-      localStorage.setItem(
-        "token",
-        data.token
-      );
+      if (!data.token) {
+        throw new Error(
+          "Login succeeded but JWT token was not returned by the server."
+        );
+      }
 
-      localStorage.setItem(
-        "user",
-        JSON.stringify(data)
-      );
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data));
 
       setIsLoggedIn(true);
-
     } catch (error) {
-      setMessage(error.message);
+      console.error("LOGIN ERROR:", error);
+      setMessage(error.message || "Unable to connect to server.");
     } finally {
       setLoading(false);
     }
@@ -71,26 +84,15 @@ function App() {
 
   return (
     <div className="app">
-
       <div className="login-container">
-
         <div className="login-card">
 
           <div className="logo-section">
-
-            <h1>
-              Devi Navaratri
-            </h1>
-
-            <p>
-              Member Management System
-            </p>
-
+            <h1>Devi Navaratri</h1>
+            <p>Member Management System</p>
           </div>
 
-          <h2>
-            Welcome Back
-          </h2>
+          <h2>Welcome Back</h2>
 
           <p className="login-subtitle">
             Login to continue
@@ -99,48 +101,36 @@ function App() {
           <form onSubmit={handleLogin}>
 
             <div className="form-group">
-
-              <label>
-                Email
-              </label>
+              <label>Email</label>
 
               <input
                 type="email"
                 placeholder="Enter your email"
                 value={email}
-                onChange={(e) =>
-                  setEmail(e.target.value)
-                }
+                onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
               />
-
             </div>
 
             <div className="form-group">
-
-              <label>
-                Password
-              </label>
+              <label>Password</label>
 
               <input
                 type="password"
                 placeholder="Enter your password"
                 value={password}
-                onChange={(e) =>
-                  setPassword(e.target.value)
-                }
+                onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
               />
-
             </div>
 
             <button
               type="submit"
               disabled={loading}
             >
-              {loading
-                ? "Logging in..."
-                : "Login"}
+              {loading ? "Logging in..." : "Login"}
             </button>
 
           </form>
@@ -152,9 +142,7 @@ function App() {
           )}
 
         </div>
-
       </div>
-
     </div>
   );
 }
