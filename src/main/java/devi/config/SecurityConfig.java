@@ -10,6 +10,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableMethodSecurity
@@ -20,7 +25,8 @@ public class SecurityConfig {
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter) {
 
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.jwtAuthenticationFilter =
+                jwtAuthenticationFilter;
     }
 
     @Bean
@@ -28,24 +34,30 @@ public class SecurityConfig {
             HttpSecurity http) throws Exception {
 
         http
+                // CORS
+                .cors(cors -> {})
+
+                // Disable CSRF for REST API
                 .csrf(csrf -> csrf.disable())
 
+                // JWT is stateless
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
 
+                // Authorization
                 .authorizeHttpRequests(auth -> auth
 
-                        // PUBLIC
+                        // PUBLIC APIs
                         .requestMatchers(
                                 "/users",
                                 "/users/",
                                 "/users/login"
                         ).permitAll()
 
-                        // ADMIN APIs are handled by @PreAuthorize
+                        // ADMIN APIs
                         .requestMatchers("/admin/**")
                         .authenticated()
 
@@ -53,10 +65,12 @@ public class SecurityConfig {
                         .requestMatchers("/users/**")
                         .authenticated()
 
+                        // Everything else
                         .anyRequest()
                         .authenticated()
                 )
 
+                // JWT filter
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
@@ -65,8 +79,50 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // CORS CONFIGURATION
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+
+        CorsConfiguration configuration =
+                new CorsConfiguration();
+
+        configuration.setAllowedOrigins(
+                List.of(
+                        "http://localhost:5173"
+                )
+        );
+
+        configuration.setAllowedMethods(
+                List.of(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "OPTIONS"
+                )
+        );
+
+        configuration.setAllowedHeaders(
+                List.of("*")
+        );
+
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration(
+                "/**",
+                configuration
+        );
+
+        return source;
+    }
+
+    // PASSWORD ENCODER
     @Bean
     public PasswordEncoder passwordEncoder() {
+
         return new BCryptPasswordEncoder();
     }
 }
