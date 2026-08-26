@@ -1,11 +1,9 @@
-
 package devi.config;
 
 import devi.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -38,9 +36,11 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
 
-                .cors(cors -> cors.configurationSource(
-                        corsConfigurationSource()
-                ))
+                .cors(cors ->
+                        cors.configurationSource(
+                                corsConfigurationSource()
+                        )
+                )
 
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
@@ -56,18 +56,18 @@ public class SecurityConfig {
                                 "/**"
                         ).permitAll()
 
-                        // PUBLIC
+                        // PUBLIC LOGIN & USER CREATION
                         .requestMatchers(
                                 "/users",
                                 "/users/",
                                 "/users/login"
                         ).permitAll()
 
-                        // ADMIN
+                        // ADMIN APIs
                         .requestMatchers("/admin/**")
                         .authenticated()
 
-                        // USER
+                        // USER APIs
                         .requestMatchers("/users/**")
                         .authenticated()
 
@@ -89,25 +89,35 @@ public class SecurityConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:5173"
-        ));
+        /*
+         * Allow frontend requests.
+         *
+         * We are using JWT Authorization headers,
+         * so cookies are not required.
+         */
+        configuration.setAllowedOriginPatterns(
+                List.of("*")
+        );
 
-        configuration.setAllowedMethods(List.of(
-                "GET",
-                "POST",
-                "PUT",
-                "DELETE",
-                "OPTIONS"
-        ));
+        configuration.setAllowedMethods(
+                List.of(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "OPTIONS"
+                )
+        );
 
-        configuration.setAllowedHeaders(List.of(
-                "Authorization",
-                "Content-Type",
-                "Accept"
-        ));
+        configuration.setAllowedHeaders(
+                List.of("*")
+        );
 
-        configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(
+                List.of("Authorization")
+        );
+
+        configuration.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();

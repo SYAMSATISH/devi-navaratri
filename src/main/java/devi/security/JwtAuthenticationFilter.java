@@ -1,3 +1,4 @@
+
 package devi.security;
 
 import devi.service.JwtService;
@@ -34,10 +35,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
+        // Always allow CORS preflight request
+        if ("OPTIONS".equalsIgnoreCase(
+                request.getMethod())) {
+
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authHeader =
                 request.getHeader("Authorization");
 
-        // No token → continue request
+        // No JWT → continue request
         if (authHeader == null
                 || !authHeader.startsWith("Bearer ")) {
 
@@ -60,11 +69,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 if (jwtService.isTokenValid(token)) {
 
-                    /*
-                     * Currently JWT contains only email.
-                     * Role-based authorization can be added
-                     * later by loading the user from database.
-                     */
                     List<GrantedAuthority> authorities =
                             Collections.emptyList();
 
@@ -86,8 +90,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         } catch (Exception e) {
 
-            // Invalid/expired JWT.
-            // Continue without authentication.
             SecurityContextHolder
                     .clearContext();
         }
