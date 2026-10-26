@@ -3,6 +3,7 @@ package devi.controller;
 import devi.dto.UserResponse;
 import devi.entity.User;
 import devi.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -50,7 +51,7 @@ public class AdminController {
     // CREATE MEMBER
     @PostMapping("/members")
     public ResponseEntity<UserResponse> createMember(
-            @RequestBody User user) {
+            @Valid @RequestBody User user) {
 
         User savedUser = userService.createUser(user);
 
@@ -62,7 +63,7 @@ public class AdminController {
     // CREATE ADMIN
 @PostMapping("/admins")
 public ResponseEntity<UserResponse> createAdmin(
-        @RequestBody User user) {
+        @Valid @RequestBody User user) {
 
     User savedAdmin = userService.createAdmin(user);
 

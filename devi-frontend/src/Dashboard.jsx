@@ -1,8 +1,8 @@
 
 import { useEffect, useState } from "react";
 import "./Dashboard.css";
-
-const API_URL = "https://devi-navaratri.onrender.com";
+import Members from "./Members";
+import { apiFetch, signOut } from "./api";
 
 function Dashboard() {
   const [user, setUser] = useState(null);
@@ -26,46 +26,33 @@ function Dashboard() {
     }
   }, []);
 
-  useEffect(() => {
-    if (user?.role === "ADMIN" && token) {
-      loadAdminData();
-    }
-  }, [user, token]);
-
   const loadAdminData = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const headers = {
-        Authorization: `Bearer ${token}`,
-      };
+      const [membersData, adminsData] = await Promise.all([
+        apiFetch("/admin/members"),
+        apiFetch("/admin/admins"),
+      ]);
 
-      const [membersResponse, adminsResponse] =
-        await Promise.all([
-          fetch(`${API_URL}/admin/members`, { headers }),
-          fetch(`${API_URL}/admin/admins`, { headers }),
-        ]);
-
-      if (membersResponse.ok) {
-        setMembers(await membersResponse.json());
-      }
-
-      if (adminsResponse.ok) {
-        setAdmins(await adminsResponse.json());
-      }
+      setMembers(membersData || []);
+      setAdmins(adminsData || []);
     } catch (err) {
-      setError("Unable to connect to server.");
+      setError(err.message || "Unable to connect to server.");
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.location.href = "/";
-  };
+  useEffect(() => {
+    if (user?.role === "ADMIN" && token) {
+      loadAdminData();
+    }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, token]);
+
+  const logout = signOut;
 
   const initials = (name = "") =>
     name
@@ -682,44 +669,12 @@ function Dashboard() {
                     only to administrators.
                   </p>
                 </div>
-              ) : loading ? (
-                <div className="loading">
-                  Loading members...
-                </div>
               ) : (
-                <div className="members-table">
-
-                  <div className="table-head">
-                    <span>ID</span>
-                    <span>Name</span>
-                    <span>Email</span>
-                    <span>Role</span>
-                  </div>
-
-                  {members.map((member) => (
-                    <div
-                      className="table-row"
-                      key={member.id}
-                    >
-                      <span>
-                        #{member.id}
-                      </span>
-
-                      <strong>
-                        {member.name}
-                      </strong>
-
-                      <span>
-                        {member.email}
-                      </span>
-
-                      <span className="member-role">
-                        {member.role}
-                      </span>
-                    </div>
-                  ))}
-
-                </div>
+                <Members
+                  members={members}
+                  loading={loading}
+                  onChanged={loadAdminData}
+                />
               )}
 
             </section>

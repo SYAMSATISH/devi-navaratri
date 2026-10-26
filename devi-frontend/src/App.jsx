@@ -2,8 +2,7 @@
 import { useState } from "react";
 import "./App.css";
 import Dashboard from "./Dashboard";
-
-const API_URL = "https://devi-navaratri.onrender.com";
+import { API_URL } from "./api";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(

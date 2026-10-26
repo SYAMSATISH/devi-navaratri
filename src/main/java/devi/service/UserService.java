@@ -1,7 +1,9 @@
 package devi.service;
 
 import devi.entity.User;
+import devi.exception.ResourceNotFoundException;
 import devi.repository.UserRepository;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +32,7 @@ public class UserService {
     public User getUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+                        new ResourceNotFoundException("User not found"));
     }
 
     // CREATE MEMBER
@@ -42,10 +44,10 @@ public class UserService {
                 .count();
 
         if (memberCount >= 10) {
-            throw new RuntimeException(
-                    "Maximum 10 members are allowed"
-            );
+            throw new IllegalArgumentException("Maximum 10 members are allowed");
         }
+
+        ensureEmailFree(user.getEmail(), null);
 
         user.setRole("MEMBER");
 
@@ -63,17 +65,13 @@ public class UserService {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "Invalid email or password"
-                        ));
+                        new BadCredentialsException("Invalid email or password"));
 
         if (!passwordEncoder.matches(
                 password,
                 user.getPassword())) {
 
-            throw new RuntimeException(
-                    "Invalid email or password"
-            );
+            throw new BadCredentialsException("Invalid email or password");
         }
 
         return user;
@@ -86,9 +84,9 @@ public class UserService {
 
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "User not found"
-                        ));
+                        new ResourceNotFoundException("User not found"));
+
+        ensureEmailFree(updatedUser.getEmail(), id);
 
         existingUser.setName(
                 updatedUser.getName()
@@ -116,9 +114,7 @@ public class UserService {
 
         User user = userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "User not found"
-                        ));
+                        new ResourceNotFoundException("User not found"));
 
         userRepository.delete(user);
     }
@@ -130,9 +126,7 @@ public class UserService {
 
         User user = userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "User not found"
-                        ));
+                        new ResourceNotFoundException("User not found"));
 
         user.setPassword(
                 passwordEncoder.encode(
@@ -166,6 +160,8 @@ public class UserService {
     // CREATE ADMIN
     public User createAdmin(User user) {
 
+        ensureEmailFree(user.getEmail(), null);
+
         user.setRole("ADMIN");
 
         user.setPassword(
@@ -185,16 +181,12 @@ public class UserService {
         if (!role.equals("ADMIN")
                 && !role.equals("MEMBER")) {
 
-            throw new RuntimeException(
-                    "Role must be ADMIN or MEMBER"
-            );
+            throw new IllegalArgumentException("Role must be ADMIN or MEMBER");
         }
 
         User user = userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "User not found"
-                        ));
+                        new ResourceNotFoundException("User not found"));
 
         // If changing to MEMBER,
         // check maximum 10 members
@@ -208,14 +200,32 @@ public class UserService {
                     .count();
 
             if (memberCount >= 10) {
-                throw new RuntimeException(
-                        "Maximum 10 members are allowed"
-                );
+                throw new IllegalArgumentException("Maximum 10 members are allowed");
             }
+        }
+
+        if ("ADMIN".equals(user.getRole())
+                && "MEMBER".equals(role)
+                && getAdmins().size() <= 1) {
+
+            throw new IllegalArgumentException(
+                    "At least one admin is required"
+            );
         }
 
         user.setRole(role);
 
         return userRepository.save(user);
+    }
+
+    private void ensureEmailFree(String email, Long selfId) {
+
+        userRepository.findByEmail(email).ifPresent(found -> {
+            if (selfId == null || !found.getId().equals(selfId)) {
+                throw new IllegalArgumentException(
+                        "Email is already registered"
+                );
+            }
+        });
     }
 }

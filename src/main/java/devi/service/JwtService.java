@@ -3,6 +3,7 @@ package devi.service;
 import devi.entity.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -12,16 +13,14 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    private static final String SECRET_KEY =
-            "my-super-secret-key-for-jwt-authentication-2026";
-
     private static final long EXPIRATION_TIME =
             1000L * 60 * 60;
 
-    private final SecretKey key =
-            Keys.hmacShaKeyFor(
-                    SECRET_KEY.getBytes(StandardCharsets.UTF_8)
-            );
+    private final SecretKey key;
+
+    public JwtService(@Value("${app.jwt.secret}") String secret) {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
 
     // GENERATE TOKEN
     public String generateToken(User user) {
